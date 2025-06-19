@@ -1,0 +1,133 @@
+
+Scaffold-DbContext "Host=localhost;Port=5432;Database=postgres;Username=postgresr;Password=2006050" Npgsql.EntityFrameworkCore.PostgreSQL -OutputDir Models -Context MyDbContext -Force
+
+
+ //чтобы обновлять интерфейс сразу в списке
+foreach (var doc in AppDbService.GetAllDocuments())
+ {
+     documents.Add(doc);
+ }
+
+call- Evan, [18.06.2025 15:47]
+public bool DeleteDoc(Models.Document document)
+{
+    try
+    {
+        using (var context = new AppDbContext())
+        {
+            context.Documents.Remove(document);
+            context.SaveChanges();
+            return true;
+        }
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(ex.Message, "error", MessageBoxButton.OK, MessageBoxImage.Error);
+        return false;
+    }
+}
+
+
+ public bool AddNewDoc(string Path, bool _Public, int DocType, string Title)
+ {
+     try
+     {
+         using (var context = new AppDbContext())
+         {
+             var newDoc = new Models.Document
+             {
+                 FilePath = Path,
+                 Title = Title,
+                 IsPublic = _Public,
+                 DocTypeId = DocType,
+             };
+             context.Documents.Add(newDoc);
+             context.SaveChanges();
+             return true;
+         }
+     }
+     catch (Exception ex)
+     {
+         MessageBox.Show(ex.Message, "error", MessageBoxButton.OK, MessageBoxImage.Error);
+         return false;
+     }
+ }
+
+
+public ObservableCollection<Models.Document> GetAllDocuments()
+{
+    try
+    {
+        using (var context = new AppDbContext())
+        {
+            return new ObservableCollection<Models.Document>(context.Documents.Include(d => d.UploadedByNavigation).Include(d => d.ModifiedByNavigation).ToList());
+        }
+    }
+    catch (Exception ex)
+    {
+        MessageBox.Show(ex.Message, "error", MessageBoxButton.OK, MessageBoxImage.Error);
+        return new ObservableCollection<Models.Document>();
+    }
+}
+
+
+ public partial class MainPageControl : UserControl
+ {
+     public ObservableCollection<Document> documents { get; set; }
+     private DbService AppDbService = new DbService();
+     public MainPageControl(MainWindow mainWindow)
+     {
+         InitializeComponent();
+         documents = AppDbService.GetAllDocuments();
+         DataContext = this;
+     }
+}
+
+
+<ListBox x:Name="DocumetnsListBox" Height="800" Width="500" VerticalAlignment="Top" HorizontalAlignment="Left" 
+         BorderThickness="2" Margin="0 70 0 0"
+         ItemsSource="{Binding documents}">
+    <ListBox.ItemTemplate>
+        <DataTemplate>
+            <StackPanel>
+                <TextBlock Text="{Binding Title}" FontWeight="Bold" FontSize="14"/>
+                <TextBlock Text="{Binding UploadedByNavigation.Login, StringFormat='Загружено: {0}'}" FontSize="12" Foreground="Gray"/>
+
+            </StackPanel>
+        </DataTemplate>
+    </ListBox.ItemTemplate>
+</ListBox>
+
+
+public MainWindow()
+{
+    InitializeComponent();
+    MainContent.Content = new MainPageControl(this);
+}
+
+
+ <Grid>
+     <ContentControl x:Name="MainContent"/>
+ </Grid>
+
+
+открытие окна:
+Обработчик нажатия кнопки Button_Click будет выглядеть так:
+
+
+private void Button_Click(object sender, RoutedEventArgs e)
+{
+    TaskWindow taskWindow = new TaskWindow();
+    taskWindow.Show();
+}
+
+
+модальное окно:
+var addWindow = new AddDocumentWindow();   // 1. Создаем экземпляр нового окна
+addWindow.Owner = this;                    // 2. Указываем, что владельцем окна является текущее (MainWindow)
+var result = addWindow.ShowDialog();       // 3. Открываем окно как модальное и ждем, пока оно закроется
+
+
+
+//в самом модальном окне
+ this.DialogResult = true; // закрывает окно и вернёт true в ShowDialog
